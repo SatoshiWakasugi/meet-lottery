@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Meet Picker",
   "version": "1.0",
-  "description": "A sample Chrome extension",
+  "description": "This is a Google Chrome extension that allows you to nominate one person from among the participants of a Google Meet meeting.",
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icon.png"
