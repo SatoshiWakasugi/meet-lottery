@@ -12,12 +12,19 @@ export default defineConfig({
       },
       output: {
         entryFileNames: 'js/popup.js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+            return 'assets/styles/main.css'
+          }
+          return '[name].[hash][extname]'
+        },
       },
     },
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@/': `${__dirname}/src/`,
+      '~/': `${__dirname}/public/`,
     },
   },
 })
