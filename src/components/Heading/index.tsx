@@ -6,5 +6,9 @@ type Props = {
 }
 
 export const Heading: FC<Props> = ({ children, className }) => {
-  return <h1 className={`text-4xl text-center ${className}`}>{children}</h1>
+  return (
+    <h1 className={`text-5xl text-center font-serif ${className}`}>
+      {children}
+    </h1>
+  )
 }
