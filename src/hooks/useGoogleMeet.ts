@@ -1,4 +1,4 @@
-import { membersMock } from '@/mock'
+import { membersMock } from '@/mocks'
 import { Member } from '@/types/Member'
 import { useEffect, useState } from 'preact/hooks'
 
@@ -15,7 +15,12 @@ export const useGoogleMeet = () => {
             image: response.images[index] || '',
           }))
           const setupMembers = members.map((member: any) => {
-            return { ...member, participation: true, display: true }
+            return {
+              ...member,
+              participation: true,
+              display: true,
+              online: true,
+            }
           })
           setMembers(setupMembers)
         } else {
