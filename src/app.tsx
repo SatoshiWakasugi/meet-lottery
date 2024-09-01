@@ -1,245 +1,290 @@
-import { useEffect, useState } from 'preact/hooks'
 import '@/app.css'
+import { useEffect, useMemo, useState } from 'preact/hooks'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { membersMock } from '@/mock.ts'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { useGoogleMeet } from '@/hooks/useGoogleMeet'
+import { Member } from '@/types/Member'
+import { Heading } from './components/Heading'
+import { Description } from './components/Description'
+import { MemberList, MemberListItem } from './components/MemberList'
+import { randomPick, hasItems as hasMembers } from '@/utils'
+import { Errors, useError } from '@/hooks/useError'
 
-type Member = {
-  name: string
-  image: string
-  entry: boolean
-  display: boolean
+const DEFAULT_THINKING_TIME = 3
+
+const filterParticipationMember = (members: Member[]) => {
+  return members.filter((member) => member.participation)
+}
+
+const defineErrors: Errors = {
+  emptyAdditionalForm: {
+    name: 'empty-additional-form',
+    message: '追加したいメンバーが入力されていません。',
+  },
+  existAdditionalMember: {
+    name: 'exist-additional-member-error',
+    message: '入力されたメンバーはすでに抽選名簿に存在しています。',
+  },
 }
 
 export function App() {
-  const [members, setMembers] = useState<Member[]>(membersMock)
-  const [searchInputValue, setSearchInputValue] = useState('')
-  const [addInputValue, setAddInputValue] = useState('')
-  const [addInputError, setAddInputError] = useState(false)
-  const [resultDialogOpen, setResultDialogOpen] = useState(false)
+  const { members, setMembers } = useGoogleMeet()
+  const { errors, setError, removeError, ErrorMessage } = useError()
+
+  const [searchMember, setSearchMember] = useState('')
+  const [additionalMember, setAdditionalMember] = useState('')
+  const [lotteryModalOpen, setLotteryModalOpen] = useState(false)
   const [inLottery, setInLottery] = useState(false)
-  const [selectedMember, setSelectedMember] = useState<Member>({
+  const [winner, setWinner] = useState<Member>({
     name: '',
     image: '',
-    entry: true,
+    participation: true,
     display: true,
   })
+  const [timeToLottery, setTimeToLottery] = useState(DEFAULT_THINKING_TIME)
 
   useEffect(() => {
     const filteredMembers = members.map((item) => {
-      return { ...item, display: item.name.includes(searchInputValue) }
+      return { ...item, display: item.name.includes(searchMember) }
     })
     setMembers(filteredMembers)
-  }, [searchInputValue])
+  }, [searchMember])
 
-  const exclude = (member: Member) => {
+  useEffect(() => {
+    if (lotteryModalOpen) {
+      handleStartLottery()
+    }
+  }, [lotteryModalOpen])
+
+  const lotteryAvailable = useMemo(() => {
+    return hasMembers(members.filter((member) => member.participation))
+  }, [members])
+
+  const notParticipationLottery = (member: Member) => {
     const excludedMember = members.map((item) => {
       if (member.name === item.name) {
-        return { ...item, entry: !item.entry }
+        return { ...item, participation: !item.participation }
       }
       return item
     })
     setMembers(excludedMember)
   }
 
-  const add = () => {
-    if (members.find((member) => member.name === addInputValue)) {
-      return setAddInputError(true)
+  const joinLotteryMember = () => {
+    if (members.find((member) => member.name === additionalMember)) {
+      setError(defineErrors.existAdditionalMember)
+      return
     }
 
     const addMember = {
-      name: addInputValue,
+      name: additionalMember,
       image: '',
-      entry: true,
+      participation: true,
       display: true,
     }
     setMembers([addMember, ...members])
-    setAddInputValue('')
+    setAdditionalMember('')
   }
 
-  const searchInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeSearchInput = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const value = (event.target as HTMLInputElement).value
-    setSearchInputValue(value)
+    setSearchMember(value)
   }
 
-  const addInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeAdditionalInput = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const value = (event.target as HTMLInputElement).value
-    setAddInputError(false)
-    setAddInputValue(value)
+    removeError(defineErrors.existAdditionalMember.name)
+    removeError(defineErrors.emptyAdditionalForm.name)
+    setAdditionalMember(value)
   }
 
-  const closeDialog = () => {
-    setResultDialogOpen(false)
+  const handleOpenLotteryModal = () => {
+    setLotteryModalOpen(true)
   }
 
-  const openDialog = () => {
-    setResultDialogOpen(true)
+  const handleCloseLotteryModal = () => {
+    setLotteryModalOpen(false)
   }
 
-  useEffect(() => {
-    if (resultDialogOpen) {
-      lottery()
-    }
-  }, [resultDialogOpen])
-
-  const lottery = () => {
+  const handleStartLottery = () => {
     setInLottery(true)
-    const randomSelect = members[Math.floor(Math.random() * members.length)]
-    setSelectedMember(randomSelect)
+
+    const participationMembers = members.filter((member) => {
+      return member.participation
+    })
+
+    const pickedLotteryWinner = randomPick(participationMembers)
+    setWinner(pickedLotteryWinner)
 
     setTimeout(() => {
       setInLottery(false)
-    }, 2000)
+    }, timeToLottery * 1000)
   }
 
-  // @ts-ignore
-  chrome.runtime?.sendMessage({ type: 'GET_MEMBERS' }, (response) => {
-    if (response && response.names && response.images) {
-      const members = response.names.map((name: any, index: number) => ({
-        name,
-        image: response.images[index] || '',
-      }))
-      const setupMembers = members.map((member: any) => {
-        return { ...member, entry: true, display: true }
-      })
-      setMembers(setupMembers)
-    } else {
-      console.log('Failed to retrieve members')
+  const handleChangeTimeToLottery = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = (event.target as HTMLInputElement).value
+    setTimeToLottery(Number(value))
+  }
+
+  const handleClickAdditionalMemberButton = () => {
+    if (!additionalMember) {
+      setError(defineErrors.emptyAdditionalForm)
+      return
     }
-  })
+
+    joinLotteryMember()
+  }
+
+  const renderErrorMessage = useMemo(() => {
+    if (errors['empty-additional-form']) {
+      return <>追加したいメンバーが入力されていません。</>
+    }
+    if (errors['exist-additional-member-error']) {
+      return <>入力しているメンバー名はすでに存在しています。</>
+    }
+  }, [errors])
 
   return (
-    <div>
-      <p className="text-4xl text-center">Meet Nominator</p>
-      <div className="h-4" />
-      <div className="flex justify-center">
-        <Button type="button" onClick={openDialog}>
-          抽選スタート
-        </Button>
-        <Dialog open={resultDialogOpen} onOpenChange={setResultDialogOpen}>
-          {inLottery ? (
-            <DialogContent className="sm:max-w-[425px]">
-              <p>抽選中...</p>
-            </DialogContent>
-          ) : (
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>抽選結果</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div
-                  className={`flex flex-col items-center gap-4 py-1 px-2 w-full rounded-lg bg-insert}`}
-                >
-                  <Avatar className="w-36 h-36">
-                    <AvatarImage
-                      src={selectedMember.image}
-                      alt={selectedMember.name}
-                    />
-                    <AvatarFallback>{selectedMember.name}</AvatarFallback>
-                  </Avatar>
-                  <p className="text-2xl">{selectedMember.name} さん</p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" onClick={closeDialog}>
-                  抽選結果をとじる
-                </Button>
-                <Button type="submit" onClick={lottery}>
-                  再抽選する
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          )}
-        </Dialog>
-      </div>
-      <div className="h-4" />
-      <div className="flex gap-4">
-        <Input
-          type="text"
-          placeholder="検索するユーザー名を入力してください"
-          value={searchInputValue}
-          onChange={(e) => searchInput(e)}
-        />
-      </div>
-      <Separator className="my-4" />
-      <div className="p-4 bg-slate-100 flex flex-col">
-        <div class="flex flex-col gap-1">
-          <div className="flex gap-2">
+    <>
+      <section className="pb-4">
+        <Heading>Meet Lottery</Heading>
+        <Description>
+          Google Meet
+          会議に参加しているメンバーからランダムで一人を選ぶ抽選ツールです。
+          <br />
+          Google Meet
+          の会議画面で参加メンバーリストを表示した状態で使用してください。
+        </Description>
+      </section>
+      <section className="pb-4">
+        <div className="flex flex-col items-center gap-2">
+          <Button
+            type="button"
+            onClick={handleOpenLotteryModal}
+            disabled={!lotteryAvailable}
+          >
+            抽選スタート
+          </Button>
+          <Label htmlFor="inLotteryTime" className="flex items-center">
+            <span className="shrink-0">抽選時間 :</span>
             <Input
-              type="text"
-              placeholder="新規追加するメンバー名を入力してください"
-              value={addInputValue}
-              onChange={(e) => addInput(e)}
-              className={addInputError ? 'border-rose-600' : ''}
+              type="number"
+              id="inLotteryTime"
+              value={timeToLottery}
+              onChange={(e) => handleChangeTimeToLottery(e)}
             />
-            <Button type="button" onClick={() => add()}>
-              追加
-            </Button>
-          </div>
-          <div className="h-4">
-            {addInputError && (
-              <p className="text-rose-600 text-xs pl-2">
-                追加したメンバーはすでに存在しています。
-              </p>
-            )}
-          </div>
+            <span className="shrink-0">秒</span>
+          </Label>
+          {!hasMembers(filterParticipationMember(members)) && (
+            <ErrorMessage>
+              抽選に参加できるメンバーが存在しません。
+            </ErrorMessage>
+          )}
         </div>
-        <ul className="flex flex-col gap-2 max-h-72 overflow-scroll">
-          {members.map((member) => {
-            if (member.display) {
-              return (
-                <li>
-                  <div className="flex gap-2 items-center">
-                    <Label
-                      htmlFor={member.name}
-                      className="flex items-center w-full cursor-pointer"
-                    >
-                      <div className="px-2">
-                        <Checkbox
-                          id={member.name}
-                          onClick={() => exclude(member)}
-                          checked={member.entry}
-                        />
-                      </div>
-                      <div
-                        className={`flex items-center gap-4 py-1 px-2 w-full rounded-lg ${member.entry ? 'bg-white' : 'bg-insert'}`}
-                      >
-                        <Avatar>
-                          <AvatarImage src={member.image} alt={member.name} />
-                          <AvatarFallback>CN</AvatarFallback>
-                        </Avatar>
-                        <p>{member.name}</p>
-                      </div>
-                    </Label>
-                  </div>
-                </li>
+      </section>
+      <Separator className="my-4" />
+      <section>
+        <div className="p-4">
+          <Input
+            type="text"
+            placeholder="検索するメンバー名を入力してください"
+            value={searchMember}
+            onChange={(e) => handleChangeSearchInput(e)}
+          />
+        </div>
+        <div className="p-4 bg-slate-100 flex flex-col">
+          <div class="flex flex-col gap-1">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="抽選に追加するメンバー名を入力してください"
+                value={additionalMember}
+                onChange={(e) => handleChangeAdditionalInput(e)}
+                className={
+                  errors['exist-additional-member-error'] ||
+                  errors['empty-additional-form']
+                    ? 'border-rose-600'
+                    : ''
+                }
+              />
+              <Button type="button" onClick={handleClickAdditionalMemberButton}>
+                追加
+              </Button>
+            </div>
+            <div className="h-6">
+              <ErrorMessage>{renderErrorMessage}</ErrorMessage>
+            </div>
+          </div>
+          <MemberList members={members}>
+            {(member) =>
+              member.display && (
+                <MemberListItem
+                  member={member}
+                  onClick={() => notParticipationLottery(member)}
+                />
               )
             }
-          })}
-        </ul>
-      </div>
-      <div className="h-4" />
-      <div className="p-2 bg-slate-100">
-        <p>抽選から除外するメンバー</p>
-        <ul>
-          {members.map((member) => {
-            if (!member.entry) {
-              return <li>{member.name} さん</li>
-            }
-          })}
-        </ul>
-      </div>
-    </div>
+          </MemberList>
+        </div>
+        <div className="h-4" />
+        <div className="px-4">
+          <p>抽選から除外するメンバー</p>
+          <ul>
+            {members.map((member) => {
+              if (!member.participation) {
+                return <li>{member.name} さん</li>
+              }
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* Lottery modal */}
+      <Dialog open={lotteryModalOpen} onOpenChange={setLotteryModalOpen}>
+        {inLottery ? (
+          <DialogContent className="flex flex-col gap-4 justify-center items-center">
+            <div className="text-8xl">🤔</div>
+            <p className="text-xl">抽選中...</p>
+          </DialogContent>
+        ) : (
+          <DialogContent>
+            <p className="text-3xl text-center">抽選結果</p>
+            <div className="flex flex-col items-center gap-4 py-1 px-2 w-full rounded-lg bg-insert">
+              <Avatar className="w-36 h-36">
+                <AvatarImage src={winner.image} alt={winner.name} />
+                <AvatarFallback>{winner.name}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-2xl text-center">{winner.name} さん</p>
+                <p className="text-center">が選ばれました 🎉</p>
+              </div>
+            </div>
+            <div className="flex justify-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseLotteryModal}
+              >
+                抽選結果をとじる
+              </Button>
+              <Button type="button" onClick={handleStartLottery}>
+                再抽選する
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
+      {/* Lottery modal */}
+    </>
   )
 }
