@@ -3,4 +3,5 @@ export type Member = {
   image: string
   participation: boolean
   display: boolean
+  online: boolean
 }

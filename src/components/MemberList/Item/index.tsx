@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 import { Member } from '@/types/Member'
+import { Badge } from '../Badge'
 
 type Props = {
   member: Member
@@ -27,13 +28,16 @@ export const Item: FC<Props> = ({ member, onClick, className }) => {
             />
           </div>
           <div
-            className={`flex items-center gap-4 py-1 px-2 w-full rounded-lg ${member.participation ? 'bg-white' : 'bg-insert'}`}
+            className={`flex items-center justify-between gap-4 py-1 px-2 w-full rounded-lg ${member.participation ? 'bg-white' : 'bg-insert'}`}
           >
-            <Avatar>
-              <AvatarImage src={member.image} alt={member.name} />
-              <AvatarFallback className="text-xl">👤</AvatarFallback>
-            </Avatar>
-            <p>{member.name}</p>
+            <div className="flex items-center gap-4">
+              <Avatar>
+                <AvatarImage src={member.image} alt={member.name} />
+                <AvatarFallback className="text-xl">👤</AvatarFallback>
+              </Avatar>
+              <p>{member.name}</p>
+            </div>
+            <div className="px-4">{member.online && <Badge>online</Badge>}</div>
           </div>
         </Label>
       </div>

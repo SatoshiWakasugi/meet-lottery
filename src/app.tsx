@@ -13,6 +13,7 @@ import { Description } from './components/Description'
 import { MemberList, MemberListItem } from './components/MemberList'
 import { randomPick, hasItems as hasMembers } from '@/utils'
 import { Errors, useError } from '@/hooks/useError'
+import { Badge } from './components/ui/badge'
 
 const DEFAULT_THINKING_TIME = 3
 
@@ -44,6 +45,7 @@ export function App() {
     image: '',
     participation: true,
     display: true,
+    online: false,
   })
   const [timeToLottery, setTimeToLottery] = useState(DEFAULT_THINKING_TIME)
 
@@ -64,7 +66,7 @@ export function App() {
     return hasMembers(members.filter((member) => member.participation))
   }, [members])
 
-  const notParticipationLottery = (member: Member) => {
+  const handleChangeParticipationLottery = (member: Member) => {
     const excludedMember = members.map((item) => {
       if (member.name === item.name) {
         return { ...item, participation: !item.participation }
@@ -85,6 +87,7 @@ export function App() {
       image: '',
       participation: true,
       display: true,
+      online: false,
     }
     setMembers([addMember, ...members])
     setAdditionalMember('')
@@ -157,7 +160,10 @@ export function App() {
   return (
     <>
       <section className="pb-4">
-        <Heading>Meet Lottery</Heading>
+        <Heading className="pb-2">
+          <span className="text-primary font-bold">M</span>eet{' '}
+          <span className="text-primary font-bold">L</span>ottery
+        </Heading>
         <Description>
           Google Meet
           会議に参加しているメンバーからランダムで一人を選ぶ抽選ツールです。
@@ -167,7 +173,7 @@ export function App() {
         </Description>
       </section>
       <section className="pb-4">
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-4">
           <Button
             type="button"
             onClick={handleOpenLotteryModal}
@@ -176,14 +182,14 @@ export function App() {
             抽選スタート
           </Button>
           <Label htmlFor="inLotteryTime" className="flex items-center">
-            <span className="shrink-0">抽選時間 :</span>
+            <span className="shrink-0">抽選時間&nbsp;:&nbsp;&nbsp;</span>
             <Input
               type="number"
               id="inLotteryTime"
               value={timeToLottery}
               onChange={(e) => handleChangeTimeToLottery(e)}
             />
-            <span className="shrink-0">秒</span>
+            <span className="shrink-0">&nbsp;&nbsp;秒</span>
           </Label>
           {!hasMembers(filterParticipationMember(members)) && (
             <ErrorMessage>
@@ -230,7 +236,7 @@ export function App() {
               member.display && (
                 <MemberListItem
                   member={member}
-                  onClick={() => notParticipationLottery(member)}
+                  onClick={() => handleChangeParticipationLottery(member)}
                 />
               )
             }
@@ -239,10 +245,29 @@ export function App() {
         <div className="h-4" />
         <div className="px-4">
           <p>抽選から除外するメンバー</p>
-          <ul>
+          <ul className="grid grid-cols-4 gap-2 py-2">
             {members.map((member) => {
               if (!member.participation) {
-                return <li>{member.name} さん</li>
+                return (
+                  <li>
+                    <Badge
+                      className="py-1 flex justify-between items-center"
+                      variant="outline"
+                    >
+                      <span className="px-2 w-full text-center">
+                        {member.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleChangeParticipationLottery(member)}
+                      >
+                        <span className="text-white px-1 bg-slate-400 flex justify-center items-center rounded-full">
+                          ×
+                        </span>
+                      </button>
+                    </Badge>
+                  </li>
+                )
               }
             })}
           </ul>
@@ -265,8 +290,10 @@ export function App() {
                 <AvatarFallback>{winner.name}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-2xl text-center">{winner.name} さん</p>
-                <p className="text-center">が選ばれました 🎉</p>
+                <p className="text-2xl text-center font-bold">
+                  {winner.name} さん
+                </p>
+                <p className="text-center">が当選しました 🎉</p>
               </div>
             </div>
             <div className="flex justify-center gap-2">
