@@ -15,7 +15,7 @@ export const useGoogleMeet = () => {
             image: response.images[index] || '',
           }))
           const setupMembers = members.map((member: any) => {
-            return { ...member, entry: true, display: true }
+            return { ...member, participation: true, display: true }
           })
           setMembers(setupMembers)
         } else {
