@@ -50,10 +50,7 @@ export function App() {
   const [timeToLottery, setTimeToLottery] = useState(DEFAULT_THINKING_TIME)
 
   useEffect(() => {
-    const searchTerms = searchMember.includes(',')
-      ? searchMember.split(',')
-      : [searchMember]
-
+    const searchTerms = searchMember.split(/[,、]/)
     const filteredMembers = members.map((item) => {
       const display = searchTerms.some((term) =>
         item.name.includes(term.trim())
@@ -89,7 +86,6 @@ export function App() {
       setError(defineErrors.existAdditionalMember)
       return
     }
-
     const addMember = {
       name: additionalMember,
       image: '',
@@ -127,14 +123,12 @@ export function App() {
 
   const handleStartLottery = () => {
     setInLottery(true)
-
     const participationMembers = members.filter((member) => {
       return member.participation
     })
 
     const pickedLotteryWinner = randomPick(participationMembers)
     setWinner(pickedLotteryWinner)
-
     setTimeout(() => {
       setInLottery(false)
     }, timeToLottery * 1000)
@@ -152,8 +146,12 @@ export function App() {
       setError(defineErrors.emptyAdditionalForm)
       return
     }
-
     joinLotteryMember()
+
+    const scrollableArea = document.querySelector('#scrollableArea')
+    if (scrollableArea) {
+      scrollableArea.scrollTop = 0
+    }
   }
 
   const renderErrorMessage = useMemo(() => {
@@ -165,13 +163,22 @@ export function App() {
     }
   }, [errors])
 
+  document
+    ?.querySelector('#imageInputButton')
+    ?.addEventListener('click', () => {
+      ;(document.querySelector('#imageInput') as HTMLInputElement).click()
+    })
+
   return (
     <>
       <section className="pb-4">
-        <Heading className="pb-2">
-          <span className="text-primary font-bold">M</span>eet{' '}
-          <span className="text-primary font-bold">L</span>ottery
-        </Heading>
+        <div className="flex justify-center items-center pb-2 gap-4">
+          <img src="icon.png" alt="Meet Lottery icon" className="w-14" />
+          <Heading>
+            <span className="text-primary font-bold">M</span>eet{' '}
+            <span className="text-primary font-bold">L</span>ottery
+          </Heading>
+        </div>
         <Description>
           Google Meet
           会議に参加しているメンバーからランダムで一人を選ぶ抽選ツールです。
@@ -208,78 +215,91 @@ export function App() {
       </section>
       <Separator className="my-4" />
       <section>
-        <div className="p-4">
-          <Input
-            type="text"
-            placeholder="検索するメンバー名を入力してください"
-            value={searchMember}
-            onChange={(e) => handleChangeSearchInput(e)}
-          />
-        </div>
         <div className="p-4 bg-slate-100 flex flex-col">
           <div class="flex flex-col gap-1">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="抽選に追加するメンバー名を入力してください"
-                value={additionalMember}
-                onChange={(e) => handleChangeAdditionalInput(e)}
-                className={
-                  errors['exist-additional-member-error'] ||
-                  errors['empty-additional-form']
-                    ? 'border-rose-600'
-                    : ''
-                }
-              />
-              <Button type="button" onClick={handleClickAdditionalMemberButton}>
-                追加
-              </Button>
-            </div>
-            <div className="h-6">
-              <ErrorMessage>{renderErrorMessage}</ErrorMessage>
-            </div>
+            <Input
+              type="text"
+              placeholder="検索するメンバー名を入力してください"
+              value={searchMember}
+              onChange={(e) => handleChangeSearchInput(e)}
+            />
+            <p className="text-xs p-2">
+              ※ 複数検索をする場合は空白なしのカンマ区切りで入力してください。
+            </p>
           </div>
-          <MemberList members={members}>
-            {(member) =>
-              member.display && (
-                <MemberListItem
-                  member={member}
-                  onClick={() => handleChangeParticipationLottery(member)}
-                />
-              )
-            }
-          </MemberList>
-        </div>
-        <div className="h-4" />
-        <div className="px-4">
-          <p>抽選から除外するメンバー</p>
-          <ul className="grid grid-cols-4 gap-2 py-2">
-            {members.map((member) => {
-              if (!member.participation) {
-                return (
-                  <li>
-                    <Badge
-                      className="py-1 flex justify-between items-center"
-                      variant="outline"
-                    >
-                      <span className="px-2 w-full text-center">
-                        {member.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleChangeParticipationLottery(member)}
-                      >
-                        <span className="text-white px-1 bg-slate-400 flex justify-center items-center rounded-full">
-                          ×
-                        </span>
-                      </button>
-                    </Badge>
-                  </li>
+          <div
+            id="scrollableArea"
+            className="max-h-72 overflow-scroll scroll-smooth"
+          >
+            <MemberList members={members}>
+              {(member) =>
+                member.display && (
+                  <MemberListItem
+                    member={member}
+                    onClick={() => handleChangeParticipationLottery(member)}
+                  />
                 )
               }
-            })}
-          </ul>
+            </MemberList>
+          </div>
+          <div className="flex gap-2 bg-white py-1 px-2 rounded-lg mt-2 ml-8">
+            <Avatar>
+              <AvatarFallback className="text-xl hover:bg-muted/100">
+                😃
+              </AvatarFallback>
+            </Avatar>
+            <Input
+              type="text"
+              placeholder="抽選に追加するメンバー名を入力してください"
+              value={additionalMember}
+              onChange={(e) => handleChangeAdditionalInput(e)}
+              className={
+                errors['exist-additional-member-error'] ||
+                errors['empty-additional-form']
+                  ? 'border-rose-600'
+                  : ''
+              }
+            />
+            <Button type="button" onClick={handleClickAdditionalMemberButton}>
+              追加
+            </Button>
+          </div>
+          <div className="pr-2 pt-2 h-6 flex justify-end">
+            <ErrorMessage>{renderErrorMessage}</ErrorMessage>
+          </div>
+          <div className="pt-4">
+            <p className="pl-2">抽選から除外するメンバー</p>
+            <ul className="grid grid-cols-4 gap-2 py-2">
+              {members.map((member) => {
+                if (!member.participation) {
+                  return (
+                    <li>
+                      <Badge
+                        className="py-1 flex justify-between items-center"
+                        variant="outline"
+                      >
+                        <span className="px-2 w-full text-center">
+                          {member.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleChangeParticipationLottery(member)
+                          }
+                        >
+                          <span className="text-white px-1 bg-slate-400 flex justify-center items-center rounded-full">
+                            ×
+                          </span>
+                        </button>
+                      </Badge>
+                    </li>
+                  )
+                }
+              })}
+            </ul>
+          </div>
         </div>
+        <div className="h-4" />
       </section>
 
       {/* Lottery modal */}
