@@ -223,7 +223,7 @@ export function App() {
               value={searchMember}
               onChange={(e) => handleChangeSearchInput(e)}
             />
-            <p className="text-xs p-2">
+            <p className="text-xs pt-1 pb-4 px-2">
               ※ 複数検索をする場合は空白なしのカンマ区切りで入力してください。
             </p>
           </div>
@@ -267,7 +267,7 @@ export function App() {
           <div className="pr-2 pt-2 h-6 flex justify-end">
             <ErrorMessage>{renderErrorMessage}</ErrorMessage>
           </div>
-          <div className="pt-4">
+          <div className="pt-2">
             <p className="pl-2">抽選から除外するメンバー</p>
             <ul className="grid grid-cols-4 gap-2 py-2">
               {members.map((member) => {
@@ -299,7 +299,6 @@ export function App() {
             </ul>
           </div>
         </div>
-        <div className="h-4" />
       </section>
 
       {/* Lottery modal */}
