@@ -8,7 +8,7 @@ type Props = {
 
 export const List: FC<Props> = ({ children, members }) => {
   return (
-    <ul className="flex flex-col gap-2 max-h-72 overflow-scroll">
+    <ul className="flex flex-col gap-2">
       {members.map((member) => children(member))}
     </ul>
   )

@@ -29,8 +29,6 @@ export const useError = () => {
     })
   }, [])
 
-  console.log(errors)
-
   return {
     errors,
     setError,
