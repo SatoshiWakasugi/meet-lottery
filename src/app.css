@@ -1,5 +1,6 @@
 #app {
   width: 640px;
+  height: 100%;
   margin: 0 auto;
   padding: 2rem;
 }
