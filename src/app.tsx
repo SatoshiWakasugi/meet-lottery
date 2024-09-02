@@ -50,9 +50,17 @@ export function App() {
   const [timeToLottery, setTimeToLottery] = useState(DEFAULT_THINKING_TIME)
 
   useEffect(() => {
+    const searchTerms = searchMember.includes(',')
+      ? searchMember.split(',')
+      : [searchMember]
+
     const filteredMembers = members.map((item) => {
-      return { ...item, display: item.name.includes(searchMember) }
+      const display = searchTerms.some((term) =>
+        item.name.includes(term.trim())
+      )
+      return { ...item, display }
     })
+
     setMembers(filteredMembers)
   }, [searchMember])
 
