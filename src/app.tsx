@@ -54,15 +54,18 @@ export function App() {
   const [timeToLottery, setTimeToLottery] = useState(DEFAULT_TIME_TO_LOTTERY)
 
   useEffect(() => {
-    const searchTerms = searchMember.split(/[,、]/)
-    const filteredMembers = members.map((item) => {
-      const display = searchTerms.some((term) =>
-        item.name.includes(term.trim())
-      )
-      return { ...item, display }
-    })
-
-    setMembers(filteredMembers)
+    const isCommaLastCharacter =
+      searchMember.endsWith(',') || searchMember.endsWith('、')
+    if (!isCommaLastCharacter) {
+      const searchTerms = searchMember.split(/[,、]/)
+      const filteredMembers = members.map((item) => {
+        const display = searchTerms.some((term) =>
+          item.name.includes(term.trim())
+        )
+        return { ...item, display }
+      })
+      setMembers(filteredMembers)
+    }
   }, [searchMember])
 
   useEffect(() => {
@@ -158,6 +161,10 @@ export function App() {
     }
   }
 
+  const handleClickClearButton = () => {
+    setSearchMember('')
+  }
+
   const renderErrorMessage = useMemo(() => {
     if (errors['empty-additional-form']) {
       return <>追加したいメンバーが入力されていません。</>
@@ -220,18 +227,27 @@ export function App() {
       <Separator className="my-4" />
       <section>
         <div className="p-4 bg-slate-100">
-          <Input
-            type="text"
-            placeholder="検索するメンバー名を入力してください"
-            value={searchMember}
-            onChange={(e) => handleChangeSearchInput(e)}
-          />
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="検索するメンバー名を入力してください"
+              value={searchMember}
+              onChange={(e) => handleChangeSearchInput(e)}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleClickClearButton}
+            >
+              入力クリア
+            </Button>
+          </div>
           <p className="text-xs pt-2 pb-4 px-2">
             ※ 複数検索をする場合は空白なしのカンマ区切りで入力してください。
           </p>
           <div
             id="scrollableArea"
-            className="h-72 overflow-scroll scroll-smooth"
+            className="max-h-72 overflow-scroll scroll-smooth"
           >
             <MemberList members={members}>
               {(member) =>
