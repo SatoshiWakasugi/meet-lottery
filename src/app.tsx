@@ -1,21 +1,25 @@
 import '@/app.css'
-import { useEffect, useMemo, useState } from 'preact/hooks'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { useGoogleMeet } from '@/hooks/useGoogleMeet'
-import { Member } from '@/types/Member'
-import { Heading } from './components/Heading'
-import { Description } from './components/Description'
-import { MemberList, MemberListItem } from './components/MemberList'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Description } from '@/components/Description'
+import { Heading } from '@/components/Heading'
+import {
+  MemberList,
+  MemberListItem,
+  MemberListItemCard,
+} from '@/components/MemberList'
 import { randomPick, hasItems as hasMembers } from '@/utils'
 import { Errors, useError } from '@/hooks/useError'
-import { Badge } from './components/ui/badge'
+import { useGoogleMeet } from '@/hooks/useGoogleMeet'
+import { Member } from '@/types/Member'
+import { useEffect, useMemo, useState } from 'preact/hooks'
 
-const DEFAULT_THINKING_TIME = 3
+const DEFAULT_TIME_TO_LOTTERY = 3
 
 const filterParticipationMember = (members: Member[]) => {
   return members.filter((member) => member.participation)
@@ -47,7 +51,7 @@ export function App() {
     display: true,
     online: false,
   })
-  const [timeToLottery, setTimeToLottery] = useState(DEFAULT_THINKING_TIME)
+  const [timeToLottery, setTimeToLottery] = useState(DEFAULT_TIME_TO_LOTTERY)
 
   useEffect(() => {
     const searchTerms = searchMember.split(/[,、]/)
@@ -63,7 +67,7 @@ export function App() {
 
   useEffect(() => {
     if (lotteryModalOpen) {
-      handleStartLottery()
+      handleClickStartLotteryButton()
     }
   }, [lotteryModalOpen])
 
@@ -121,7 +125,7 @@ export function App() {
     setLotteryModalOpen(false)
   }
 
-  const handleStartLottery = () => {
+  const handleClickStartLotteryButton = () => {
     setInLottery(true)
     const participationMembers = members.filter((member) => {
       return member.participation
@@ -215,21 +219,19 @@ export function App() {
       </section>
       <Separator className="my-4" />
       <section>
-        <div className="p-4 bg-slate-100 flex flex-col">
-          <div class="flex flex-col gap-1">
-            <Input
-              type="text"
-              placeholder="検索するメンバー名を入力してください"
-              value={searchMember}
-              onChange={(e) => handleChangeSearchInput(e)}
-            />
-            <p className="text-xs pt-1 pb-4 px-2">
-              ※ 複数検索をする場合は空白なしのカンマ区切りで入力してください。
-            </p>
-          </div>
+        <div className="p-4 bg-slate-100">
+          <Input
+            type="text"
+            placeholder="検索するメンバー名を入力してください"
+            value={searchMember}
+            onChange={(e) => handleChangeSearchInput(e)}
+          />
+          <p className="text-xs pt-2 pb-4 px-2">
+            ※ 複数検索をする場合は空白なしのカンマ区切りで入力してください。
+          </p>
           <div
             id="scrollableArea"
-            className="max-h-72 overflow-scroll scroll-smooth"
+            className="h-72 overflow-scroll scroll-smooth"
           >
             <MemberList members={members}>
               {(member) =>
@@ -242,62 +244,61 @@ export function App() {
               }
             </MemberList>
           </div>
-          <div className="flex gap-2 bg-white py-1 px-2 rounded-lg mt-2 ml-8">
-            <Avatar>
-              <AvatarFallback className="text-xl hover:bg-muted/100">
-                😃
-              </AvatarFallback>
-            </Avatar>
-            <Input
-              type="text"
-              placeholder="抽選に追加するメンバー名を入力してください"
-              value={additionalMember}
-              onChange={(e) => handleChangeAdditionalInput(e)}
-              className={
-                errors['exist-additional-member-error'] ||
-                errors['empty-additional-form']
-                  ? 'border-rose-600'
-                  : ''
-              }
-            />
-            <Button type="button" onClick={handleClickAdditionalMemberButton}>
-              追加
-            </Button>
+          <div className="flex">
+            <div className="w-8" />
+            <MemberListItemCard className="flex gap-2 mt-2">
+              <Avatar>
+                <AvatarFallback className="text-xl hover:bg-muted/100">
+                  😃
+                </AvatarFallback>
+              </Avatar>
+              <Input
+                type="text"
+                placeholder="抽選に追加するメンバー名を入力してください"
+                value={additionalMember}
+                onChange={(e) => handleChangeAdditionalInput(e)}
+                className={
+                  errors['exist-additional-member-error'] ||
+                  errors['empty-additional-form']
+                    ? 'border-rose-600'
+                    : ''
+                }
+              />
+              <Button type="button" onClick={handleClickAdditionalMemberButton}>
+                追加
+              </Button>
+            </MemberListItemCard>
           </div>
           <div className="pr-2 pt-2 h-6 flex justify-end">
             <ErrorMessage>{renderErrorMessage}</ErrorMessage>
           </div>
-          <div className="pt-2">
-            <p className="pl-2">抽選から除外するメンバー</p>
-            <ul className="grid grid-cols-4 gap-2 py-2">
-              {members.map((member) => {
-                if (!member.participation) {
-                  return (
-                    <li>
-                      <Badge
-                        className="py-1 flex justify-between items-center"
-                        variant="outline"
+          <p className="pl-2 pt-2 text-sm">抽選から除外するメンバー</p>
+          <ul className="grid grid-cols-4 gap-2 py-2">
+            {members.map((member) => {
+              if (!member.participation) {
+                return (
+                  <li>
+                    <Badge
+                      className="py-1 flex justify-between items-center"
+                      variant="outline"
+                    >
+                      <span className="px-2 w-full text-center">
+                        {member.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleChangeParticipationLottery(member)}
                       >
-                        <span className="px-2 w-full text-center">
-                          {member.name}
+                        <span className="text-white px-1 bg-slate-400 flex justify-center items-center rounded-full">
+                          ×
                         </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleChangeParticipationLottery(member)
-                          }
-                        >
-                          <span className="text-white px-1 bg-slate-400 flex justify-center items-center rounded-full">
-                            ×
-                          </span>
-                        </button>
-                      </Badge>
-                    </li>
-                  )
-                }
-              })}
-            </ul>
-          </div>
+                      </button>
+                    </Badge>
+                  </li>
+                )
+              }
+            })}
+          </ul>
         </div>
       </section>
 
@@ -331,7 +332,7 @@ export function App() {
               >
                 抽選結果をとじる
               </Button>
-              <Button type="button" onClick={handleStartLottery}>
+              <Button type="button" onClick={handleClickStartLotteryButton}>
                 再抽選する
               </Button>
             </div>
