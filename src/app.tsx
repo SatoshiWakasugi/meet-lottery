@@ -8,11 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Description } from '@/components/Description'
 import { Heading } from '@/components/Heading'
-import {
-  MemberList,
-  MemberListItem,
-  MemberListItemCard,
-} from '@/components/MemberList'
+import { MemberItem, MemberItemCard } from '@/components/MemberItem'
 import { randomPick, hasItems as hasMembers } from '@/utils'
 import { Errors, useError } from '@/hooks/useError'
 import { useGoogleMeet } from '@/hooks/useGoogleMeet'
@@ -249,20 +245,21 @@ export function App() {
             id="scrollableArea"
             className="max-h-72 overflow-scroll scroll-smooth"
           >
-            <MemberList members={members}>
-              {(member) =>
-                member.display && (
-                  <MemberListItem
-                    member={member}
-                    onClick={() => handleChangeParticipationLottery(member)}
-                  />
-                )
-              }
-            </MemberList>
+            <ul className="flex flex-col gap-2">
+              {members.map((member) => {
+                if (member.display)
+                  return (
+                    <MemberItem
+                      member={member}
+                      onClick={() => handleChangeParticipationLottery(member)}
+                    />
+                  )
+              })}
+            </ul>
           </div>
           <div className="flex">
             <div className="w-8" />
-            <MemberListItemCard className="flex gap-2 mt-2">
+            <MemberItemCard className="flex gap-2 mt-2">
               <Avatar>
                 <AvatarFallback className="text-xl hover:bg-muted/100">
                   😃
@@ -283,7 +280,7 @@ export function App() {
               <Button type="button" onClick={handleClickAdditionalMemberButton}>
                 追加
               </Button>
-            </MemberListItemCard>
+            </MemberItemCard>
           </div>
           <div className="pr-2 pt-2 h-6 flex justify-end">
             <ErrorMessage>{renderErrorMessage}</ErrorMessage>
